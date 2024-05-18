@@ -6,7 +6,7 @@ const tokens = (n) => {
 };
 
 describe("Token", () => {
-  let token, accounts, deployer, receiver;
+  let token, accounts, deployer, receiver, exchange, nullAddress;
 
   beforeEach(async () => {
     const Token = await ethers.getContractFactory("Token");
@@ -14,6 +14,8 @@ describe("Token", () => {
     accounts = await ethers.getSigners();
     deployer = accounts[0];
     receiver = accounts[1];
+    exchange = accounts[2];
+    nullAddress = "0x0000000000000000000000000000000000000000";
   });
 
   describe("Deployment", () => {
@@ -87,10 +89,50 @@ describe("Token", () => {
       it("rejects invalid recipient ", async () => {
         const amounts = tokens(100);
         await expect(
-          token
-            .connect(deployer)
-            .transfer("0x0000000000000000000000000000000000000000", amounts)
+          token.connect(deployer).transfer(nullAddress, amounts)
         ).to.be.revertedWith("invalid recipient");
+      });
+    });
+  });
+
+  describe("Approving Tokens", () => {
+    let amount, transaction, results;
+
+    beforeEach(async () => {
+      amount = tokens(100);
+      transaction = await token
+        .connect(deployer)
+        .approve(exchange.address, amount);
+      results = await transaction.wait();
+    });
+
+    describe("Success", () => {
+      it("allocates an allowance for delegated token spending", async () => {
+        expect(
+          await token.allowance(deployer.address, exchange.address)
+        ).to.equal(amount);
+      });
+
+      it("Emits an Approval event", async () => {
+        const iface = new ethers.Interface([
+          "event Approval(address indexed owner, address indexed spender, uint256 value)",
+        ]);
+
+        const approvalEvent = results.logs
+          .map((log) => iface.parseLog(log))
+          .find((log) => log.name === "Approval");
+
+        expect(approvalEvent).to.exist;
+        expect(approvalEvent.args.owner).to.equal(deployer.address);
+        expect(approvalEvent.args.spender).to.equal(exchange.address);
+        expect(approvalEvent.args.value).to.equal(amount);
+      });
+    });
+    describe("failure", () => {
+      it("rejects invalid spenders", async () => {
+        await expect(
+          token.connect(deployer).approve(nullAddress, amount)
+        ).to.be.revertedWith("invalid spender");
       });
     });
   });

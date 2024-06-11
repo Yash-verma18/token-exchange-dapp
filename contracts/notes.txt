@@ -1,8 +1,8 @@
 Decentralize Exchange Checklist
 
-1. Deposit Tokens
-2. Withdraw Tokens
-3. Check Balances
+1. Deposit Tokens ✅
+2. Withdraw Tokens ✅
+3. Check Balances ✅
 4. Make Orders
 5. Cancel Orders
 6. Fill Orders

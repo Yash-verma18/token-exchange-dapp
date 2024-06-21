@@ -15,6 +15,7 @@ describe("Exchange", () => {
     const Token = await ethers.getContractFactory("Token");
 
     token1 = await Token.deploy("Raymax", "RMX", 1000000);
+    token2 = await Token.deploy("Mock Dai", "mDAI", 1000000);
 
     // deploy this token by user1
 
@@ -180,6 +181,83 @@ describe("Exchange", () => {
     });
     it("returns user balance", async () => {
       expect(await exchange.balanceOf(token1, user1)).to.equal(amount);
+    });
+  });
+
+  describe("Making Orders", () => {
+    let transaction, result;
+    let amount = tokens(10);
+
+    describe("Success", () => {
+      beforeEach(async () => {
+        // Approve Token
+        transaction = await token1
+          .connect(user1)
+          .approve(exchange.target, amount);
+
+        result = await transaction.wait();
+        // Deposit Token
+        transaction = await exchange
+          .connect(user1)
+          .depositToken(token1, amount);
+
+        depositResult = await transaction.wait();
+        // Make Order
+        transaction = await exchange
+          .connect(user1)
+          .makeOrder(token2, tokens(1), token1, tokens(1));
+        result = await transaction.wait();
+      });
+
+      it("tracks the order", async () => {
+        expect(await exchange.orderCount()).to.equal(1);
+        const order = await exchange.orders(1);
+        expect(order.id).to.equal(1);
+
+        expect(order.user).to.equal(user1);
+        expect(order.amountGive).to.equal(tokens(1));
+        expect(order.amountGet).to.equal(tokens(1));
+        expect(order.tokenGet).to.equal(token2);
+        expect(order.tokenGive).to.equal(token1);
+      });
+
+      it("Emits a Order event", async () => {
+        const iface = new ethers.Interface([
+          "event Order(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp)",
+        ]);
+
+        const orderEvent = await result.logs
+          .map((log) => {
+            try {
+              return iface.parseLog(log);
+            } catch (error) {
+              return null;
+            }
+          })
+          .find((log) => log && log.name === "Order");
+
+        const args = orderEvent.args;
+
+        console.log("args", args);
+
+        expect(orderEvent).to.exist;
+        expect(orderEvent.args.user).to.equal(user1);
+        expect(orderEvent.args.tokenGet).to.equal(token2);
+        expect(orderEvent.args.amountGet).to.equal(tokens(1));
+        expect(orderEvent.args.tokenGive).to.equal(token1);
+        expect(orderEvent.args.amountGive).to.equal(tokens(1));
+        expect(args.timestamp).to.at.least(1);
+      });
+    });
+
+    describe("Failure", () => {
+      it("Should Revert with Insufficient balance", async () => {
+        await expect(
+          exchange
+            .connect(user1)
+            .makeOrder(token2, tokens(1), token1, tokens(1))
+        ).to.be.revertedWith("Insufficient balance");
+      });
     });
   });
 });

@@ -24,6 +24,7 @@ describe("Exchange", () => {
     feeAccount = accounts[1];
 
     user1 = accounts[2];
+    user2 = accounts[3];
 
     // Give some token to user1
     let transaction = await token1
@@ -257,6 +258,98 @@ describe("Exchange", () => {
             .connect(user1)
             .makeOrder(token2, tokens(1), token1, tokens(1))
         ).to.be.revertedWith("Insufficient balance");
+      });
+    });
+  });
+
+  describe("Order actions", async () => {
+    let transaction, result;
+    let amount = tokens(10);
+    let orderAmount = tokens(1);
+    beforeEach(async () => {
+      // Approve Token
+      transaction = await token1
+        .connect(user1)
+        .approve(exchange.target, amount);
+
+      result = await transaction.wait();
+      // Deposit Token
+      transaction = await exchange.connect(user1).depositToken(token1, amount);
+
+      depositResult = await transaction.wait();
+      // Make Order
+      transaction = await exchange
+        .connect(user1)
+        .makeOrder(token2, orderAmount, token1, orderAmount);
+      result = await transaction.wait();
+    });
+
+    describe("Cancelling orders", async () => {
+      describe("Success", () => {
+        beforeEach(async () => {
+          transaction = await exchange.connect(user1).cancelOrder(1);
+          result = await transaction.wait();
+        });
+        it("update canceled orders", async () => {
+          expect(await exchange.orderCancelled(1)).to.equal(true);
+        });
+
+        it("Emits a Cancel event", async () => {
+          const iface = new ethers.Interface([
+            "event Cancel(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp)",
+          ]);
+
+          const cancelEvent = await result.logs
+            .map((log) => {
+              try {
+                return iface.parseLog(log);
+              } catch (error) {
+                return null;
+              }
+            })
+            .find((log) => log && log.name === "Cancel");
+
+          expect(cancelEvent).to.exist;
+          expect(cancelEvent.args.user).to.equal(user1);
+          expect(cancelEvent.args.tokenGet).to.equal(token2);
+          expect(cancelEvent.args.amountGet).to.equal(orderAmount);
+          expect(cancelEvent.args.tokenGive).to.equal(token1);
+          expect(cancelEvent.args.amountGive).to.equal(orderAmount);
+        });
+      });
+      describe("Failure", () => {
+        beforeEach(async () => {
+          // Approve Token
+          transaction = await token1
+            .connect(user1)
+            .approve(exchange.target, amount);
+
+          result = await transaction.wait();
+          // Deposit Token
+          transaction = await exchange
+            .connect(user1)
+            .depositToken(token1, amount);
+
+          depositResult = await transaction.wait();
+          // Make Order
+          transaction = await exchange
+            .connect(user1)
+            .makeOrder(token2, orderAmount, token1, orderAmount);
+          result = await transaction.wait();
+        });
+
+        it("Rejects invalids order id", async () => {
+          const invalidOrderId = 1212;
+          await expect(
+            exchange.connect(user1).cancelOrder(invalidOrderId)
+          ).to.be.revertedWith("Order does not exist");
+        });
+
+        it("Rejects if the order is not made by the user", async () => {
+          await expect(
+            exchange.connect(user2).cancelOrder(1)
+          ).to.be.revertedWith("Not your order");
+        });
       });
     });
   });

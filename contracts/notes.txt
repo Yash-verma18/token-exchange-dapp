@@ -5,6 +5,6 @@ Decentralize Exchange Checklist
 3. Check Balances ✅
 4. Make Orders ✅
 5. Cancel Orders ✅
-6. Fill Orders
-7. Charge Fees
+6. Fill Orders ✅
+7. Charge Fees ✅
 8. Track Fee Account ✅

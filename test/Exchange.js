@@ -264,8 +264,9 @@ describe("Exchange", () => {
 
   describe("Order actions", async () => {
     let transaction, result;
-    let amount = tokens(10);
-    let orderAmount = tokens(1);
+    let amount = tokens(1);
+    let user1GetAmount = tokens(1); // 1 Dai token2
+    let user2GetAmount = tokens(1); // 1 RAYMAX token1
     beforeEach(async () => {
       // Approve Token
       transaction = await token1
@@ -275,12 +276,30 @@ describe("Exchange", () => {
       result = await transaction.wait();
       // Deposit Token
       transaction = await exchange.connect(user1).depositToken(token1, amount);
-
       depositResult = await transaction.wait();
+
+      // Give tokens to user2
+      transaction = await token2.connect(deployer).transfer(user2, tokens(100));
+
+      result = await transaction.wait();
+
+      // User2 Approving & deposit the token to echxange
+      // Approve Token
+      transaction = await token2
+        .connect(user2)
+        .approve(exchange.target, tokens(2));
+
+      result = await transaction.wait();
+      // Deposit Token
+      transaction = await exchange
+        .connect(user2)
+        .depositToken(token2, tokens(2));
+      depositResult = await transaction.wait();
+
       // Make Order
       transaction = await exchange
         .connect(user1)
-        .makeOrder(token2, orderAmount, token1, orderAmount);
+        .makeOrder(token2, user1GetAmount, token1, user2GetAmount);
       result = await transaction.wait();
     });
 
@@ -312,9 +331,9 @@ describe("Exchange", () => {
           expect(cancelEvent).to.exist;
           expect(cancelEvent.args.user).to.equal(user1);
           expect(cancelEvent.args.tokenGet).to.equal(token2);
-          expect(cancelEvent.args.amountGet).to.equal(orderAmount);
+          expect(cancelEvent.args.amountGet).to.equal(user1GetAmount);
           expect(cancelEvent.args.tokenGive).to.equal(token1);
-          expect(cancelEvent.args.amountGive).to.equal(orderAmount);
+          expect(cancelEvent.args.amountGive).to.equal(user2GetAmount);
         });
       });
       describe("Failure", () => {
@@ -334,7 +353,7 @@ describe("Exchange", () => {
           // Make Order
           transaction = await exchange
             .connect(user1)
-            .makeOrder(token2, orderAmount, token1, orderAmount);
+            .makeOrder(token2, user1GetAmount, token1, user2GetAmount);
           result = await transaction.wait();
         });
 
@@ -349,6 +368,81 @@ describe("Exchange", () => {
           await expect(
             exchange.connect(user2).cancelOrder(1)
           ).to.be.revertedWith("Not your order");
+        });
+      });
+    });
+
+    describe("Filling orders", async () => {
+      describe("Success", () => {
+        beforeEach(async () => {
+          // Make Order
+          transaction = await exchange.connect(user2).fillOrder(1);
+          result = await transaction.wait();
+        });
+        it("Executes the trade and charge fees", async () => {
+          // Token Give
+          expect(await exchange.balanceOf(token1, user1)).to.equal(tokens(0));
+          expect(await exchange.balanceOf(token1, user2)).to.equal(tokens(1));
+          expect(await exchange.balanceOf(token1, feeAccount)).to.equal(
+            tokens(0)
+          );
+
+          // Token Get
+          expect(await exchange.balanceOf(token2, user1)).to.equal(tokens(1));
+          expect(await exchange.balanceOf(token2, user2)).to.equal(tokens(0.9));
+          expect(await exchange.balanceOf(token2, feeAccount)).to.equal(
+            tokens(0.1)
+          );
+        });
+
+        it("Emits a Trade event", async () => {
+          const iface = new ethers.Interface([
+            "event Trade(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, address userFill, uint256 timestamp)",
+          ]);
+
+          const tradeEvent = await result.logs
+            .map((log) => {
+              try {
+                return iface.parseLog(log);
+              } catch (error) {
+                return null;
+              }
+            })
+            .find((log) => log && log.name === "Trade");
+
+          expect(tradeEvent).to.exist;
+          expect(tradeEvent.args.user).to.equal(user2);
+          expect(tradeEvent.args.tokenGet).to.equal(token2);
+          expect(tradeEvent.args.amountGet).to.equal(user1GetAmount);
+          expect(tradeEvent.args.tokenGive).to.equal(token1);
+          expect(tradeEvent.args.amountGive).to.equal(user2GetAmount);
+          expect(tradeEvent.args.userFill).to.equal(user1);
+          expect(tradeEvent.args.timestamp).to.at.least(1);
+        });
+
+        it("updates filled orders", async () => {
+          expect(await exchange.orderFilled(1)).to.equal(true);
+        });
+      });
+      describe("Failure", () => {
+        it("reverts with Order does not exist", async () => {
+          await expect(
+            exchange.connect(user2).fillOrder(23423)
+          ).to.be.revertedWith("Order does not exist");
+        });
+
+        it("reverts with Order already cancelled", async () => {
+          await exchange.connect(user1).cancelOrder(1);
+          await expect(exchange.connect(user2).fillOrder(1)).to.be.revertedWith(
+            "Order already cancelled"
+          );
+        });
+
+        it("reverts with Order already filled", async () => {
+          await exchange.connect(user2).fillOrder(1);
+          await expect(exchange.connect(user2).fillOrder(1)).to.be.revertedWith(
+            "Order already filled"
+          );
         });
       });
     });

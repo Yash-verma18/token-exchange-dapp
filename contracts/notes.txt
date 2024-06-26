@@ -8,3 +8,14 @@ Decentralize Exchange Checklist
 6. Fill Orders ✅
 7. Charge Fees ✅
 8. Track Fee Account ✅
+
+
+Useful scripts :
+
+1. npx hardhat test
+2. npx hardhat node
+3. npx hardhat console --network localhost
+4. npx hardhat ignition deploy ignition/modules/deploy.js --network localhost
+5. npx hardhat run scripts/seed_exchange_modular.js --network localhost
+
+

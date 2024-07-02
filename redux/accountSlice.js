@@ -7,6 +7,7 @@ export const accountSlice = createSlice({
     provider: null,
     signer: null,
     chainId: null,
+    balance: null,
   },
   reducers: {
     setAccount: (state, action) => {
@@ -21,10 +22,13 @@ export const accountSlice = createSlice({
     setChainId: (state, action) => {
       state.chainId = action.payload;
     },
+    setBalance: (state, action) => {
+      state.balance = action.payload;
+    },
   },
 });
 
-export const { setAccount, setProvider, setSigner, setChainId } =
+export const { setAccount, setProvider, setSigner, setChainId, setBalance } =
   accountSlice.actions;
 
 export default accountSlice.reducer;

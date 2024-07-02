@@ -1,20 +1,34 @@
 "use client";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loadAccount, loadProvider, loadToken } from "@/redux/interaction";
+import {
+  loadAccount,
+  loadExchange,
+  loadProvider,
+  loadTokens,
+} from "@/redux/interaction";
 
 export default function LandingPage() {
+  const account = useSelector((state: any) => state.account.account);
+  const chainId = useSelector((state: any) => state.account.chainId);
   const dispatch = useDispatch();
   const config = require("../../config.json");
   const loadBlockchainData = async () => {
     if (window.ethereum) {
-      const account = await loadAccount(dispatch);
-      const { provider, chainId } = await loadProvider(dispatch);
-      const token = await loadToken(
-        provider,
-        config[chainId]?.mEth?.address,
-        dispatch
-      );
+      if (account === null) {
+        // Load provider, account, tokens, exchange
+        const { provider, chainId } = await loadProvider(dispatch);
+        await loadAccount(provider, dispatch);
+        const Dapp: any = config[chainId]?.DApp;
+        const mEth: any = config[chainId]?.mEth;
+        const token = await loadTokens(
+          provider,
+          [Dapp.address, mEth.address],
+          dispatch
+        );
+        const exchange = config[chainId]?.exchange;
+        await loadExchange(provider, exchange.address, dispatch);
+      }
     } else {
       console.error("Ethereum object not found, install MetaMask.");
     }
@@ -22,10 +36,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     loadBlockchainData();
-  });
-
-  const account = useSelector((state: any) => state.account.account);
-  const chainId = useSelector((state: any) => state.account.chainId);
+  }, []);
 
   return (
     <>

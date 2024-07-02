@@ -3,19 +3,23 @@ import { createSlice } from "@reduxjs/toolkit";
 export const tokenSlice = createSlice({
   name: "token",
   initialState: {
-    contract: null,
-    symbol: null,
+    loaded: false,
+    contracts: [],
+    symbols: [],
   },
   reducers: {
+    setLoaded: (state, action) => {
+      state.loaded = action.payload;
+    },
     setContract: (state, action) => {
-      state.contract = action.payload;
+      state.contracts = [...state.contracts, action.payload];
     },
     setSymbol: (state, action) => {
-      state.symbol = action.payload;
+      state.symbols = [...state.symbols, action.payload];
     },
   },
 });
 
-export const { setContract, setSymbol } = tokenSlice.actions;
+export const { setContract, setSymbol, setLoaded } = tokenSlice.actions;
 
 export default tokenSlice.reducer;

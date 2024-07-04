@@ -10,7 +10,7 @@ import {
   setBalance,
 } from "@/redux/accountSlice";
 
-import { setContract, setSymbol, setLoaded } from "@/redux/tokenSlice";
+import { token1Loaded, token2Loaded } from "@/redux/tokenSlice";
 import { setExchangeContract, setExchangeLoaded } from "@/redux/exchangeSlice";
 
 export const loadProvider = async (dispatch) => {
@@ -40,17 +40,29 @@ export const loadAccount = async (provider, dispatch) => {
 };
 
 export const loadTokens = async (providerOrSigner, addresses, dispatch) => {
-  const contract1 = new Contract(addresses[0], TOKEN_ABI, providerOrSigner);
-  const symbol1 = await contract1.symbol();
-  dispatch(setLoaded(true));
-  dispatch(setSymbol(symbol1));
-  dispatch(setContract(contract1));
+  try {
+    const contract1 = new Contract(addresses[0], TOKEN_ABI, providerOrSigner);
+    const symbol1 = await contract1.symbol();
+    dispatch(
+      token1Loaded({
+        contract: contract1,
+        symbol: symbol1,
+      })
+    );
 
-  const contract2 = new Contract(addresses[1], TOKEN_ABI, providerOrSigner);
-  const symbol2 = await contract2.symbol();
-  dispatch(setSymbol(symbol2));
-  dispatch(setContract(contract2));
-  return [contract1, contract2];
+    const contract2 = new Contract(addresses[1], TOKEN_ABI, providerOrSigner);
+    const symbol2 = await contract2.symbol();
+    dispatch(
+      token2Loaded({
+        contract: contract2,
+        symbol: symbol2,
+      })
+    );
+
+    return [contract1, contract2];
+  } catch (error) {
+    console.log("error in loadTokens", error);
+  }
 };
 
 export const loadExchange = async (providerOrSigner, address, dispatch) => {

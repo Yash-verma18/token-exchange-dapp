@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-navigation-menu": "^1.2.0",
+    "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-slot": "^1.1.0",
     "@reduxjs/toolkit": "^2.2.6",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.1.1",
@@ -48,6 +51,7 @@
     "@types/mocha": "^10.0.6",
     "@types/node": "^20",
     "@types/react": "^18",
+    "@types/react-blockies": "^1.4.4",
     "@types/react-dom": "^18",
     "chai": "^4.4.1",
     "eslint": "^8",

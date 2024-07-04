@@ -11,6 +11,24 @@
     },
     "exchange": {
       "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
-    }
+    },
+    "explorerURL": "#",
+    "name": "Hardhat"
+  },
+  "1": {
+    "name": "Ethereum Mainnet",
+    "explorerURL": "https://etherscan.io"
+  },
+  "5": {
+    "name": "Goerli Test",
+    "explorerURL": "https://goerli.etherscan.io"
+  },
+  "137": {
+    "name": "Polygon Mainnet",
+    "explorerURL": "https://polygonscan.com"
+  },
+  "80001": {
+    "name": "Mumbai Testnet",
+    "explorerURL": "https://mumbai.polygonscan.com"
   }
 }

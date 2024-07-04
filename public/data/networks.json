@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "chainId": 1,
+    "name": "Ethereum Mainnet",
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID",
+    "currencyName": "Ether",
+    "currencySymbol": "ETH",
+    "blockExplorerUrl": "https://etherscan.io"
+  },
+  {
+    "id": 2,
+    "chainId": 31337,
+    "name": "Hardhat",
+    "rpcUrl": "http://localhost:8545",
+    "currencyName": "Ether",
+    "currencySymbol": "ETH",
+    "blockExplorerUrl": ""
+  },
+  {
+    "id": 4,
+    "chainId": 5,
+    "name": "Goerli Test",
+    "rpcUrl": "https://goerli.infura.io/v3/YOUR_INFURA_PROJECT_ID",
+    "currencyName": "Goerli Ether",
+    "currencySymbol": "GOR",
+    "blockExplorerUrl": "https://goerli.etherscan.io"
+  },
+  {
+    "id": 8,
+    "chainId": 137,
+    "name": "Polygon Mainnet",
+    "rpcUrl": "https://polygon-rpc.com",
+    "currencyName": "Matic",
+    "currencySymbol": "MATIC",
+    "blockExplorerUrl": "https://polygonscan.com"
+  },
+  {
+    "id": 9,
+    "chainId": 80001,
+    "name": "Mumbai Testnet",
+    "rpcUrl": "https://rpc-mumbai.matic.today",
+    "currencyName": "Matic",
+    "currencySymbol": "MATIC",
+    "blockExplorerUrl": "https://mumbai.polygonscan.com"
+  }
+]

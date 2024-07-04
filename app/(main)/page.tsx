@@ -13,17 +13,25 @@ export default function LandingPage() {
   const chainId = useSelector((state: any) => state.account.chainId);
   const dispatch = useDispatch();
   const config = require("../../config.json");
+
   const loadBlockchainData = async () => {
     if (window.ethereum) {
       if (account === null) {
         // Load provider, account, tokens, exchange
         const { provider, chainId } = await loadProvider(dispatch);
-        await loadAccount(provider, dispatch);
+
+        window.ethereum.on("chainChanged", () => {
+          window.location.reload();
+        });
+
+        window.ethereum.on("accountsChanged", () => {
+          loadAccount(provider, dispatch);
+        });
         const Dapp: any = config[chainId]?.DApp;
         const mEth: any = config[chainId]?.mEth;
         const token = await loadTokens(
           provider,
-          [Dapp.address, mEth.address],
+          [Dapp?.address, mEth?.address],
           dispatch
         );
         const exchange = config[chainId]?.exchange;

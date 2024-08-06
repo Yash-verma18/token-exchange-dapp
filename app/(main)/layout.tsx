@@ -7,7 +7,7 @@ type Props = {
 
 export default function DashboardLayout({ children }: Props) {
   return (
-    <div className="grid grid-cols-[250px_1fr] h-screen">
+    <div className="grid grid-cols-[350px_1fr] h-screen">
       <MainMenu />
       <div className="overflow-auto py-2 px-4">
         <Navbar />

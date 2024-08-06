@@ -4,19 +4,20 @@ import MenuTitle from "./menu-title";
 import MenuItem from "./menu-item";
 import Link from "next/link";
 import Markets from "./Markets";
+import Balance from "./Balance";
 
 export default function MainMenu() {
   return (
-    <nav className="bg-sky-950 overflow-auto p-4 flex flex-col">
+    <nav className="bg-sky-950 overflow-auto p-1 flex flex-col">
       <div className="dark:border-b-black border-b-zinc-300 pb-4">
         <MenuTitle />
       </div>
-      <header className="py-4 grow">
+      <header className="py-4 grow flex flex-col gap-4">
         {/* Markets */}
         <Markets />
 
         {/* Balance */}
-        <MenuItem href="/dashboard/teams">Balance</MenuItem>
+        <Balance />
 
         {/* Order */}
         <MenuItem href="/dashboard/teams">Order</MenuItem>

@@ -1,17 +1,34 @@
-import { Contract } from "ethers";
-import TOKEN_ABI from "@/abis/Token.json";
-import EXCHANGE_ABI from "@/abis/Exchange.json";
-import { Web3Provider } from "@ethersproject/providers";
+import { Contract } from 'ethers';
+import TOKEN_ABI from '@/abis/Token.json';
+import EXCHANGE_ABI from '@/abis/Exchange.json';
+import { Web3Provider } from '@ethersproject/providers';
 import {
   setAccount,
   setChainId,
   setProvider,
   setSigner,
   setBalance,
-} from "@/redux/accountSlice";
+} from '@/redux/accountSlice';
+import { ethers } from 'ethers';
+import {
+  setToken1Balance,
+  setToken2Balance,
+  token1Loaded,
+  token2Loaded,
+} from '@/redux/tokenSlice';
+import {
+  setExchangeContract,
+  setExchangeLoaded,
+  setExchangeToken1Balance,
+  setExchangeToken2Balance,
+  setTransferFail,
+  setTransferRequest,
+  setTransferSuccess,
+} from '@/redux/exchangeSlice';
 
-import { token1Loaded, token2Loaded } from "@/redux/tokenSlice";
-import { setExchangeContract, setExchangeLoaded } from "@/redux/exchangeSlice";
+// const formatTokens = (n) => {
+//   return ethers.parseUnits(n.toString());
+// };
 
 export const loadProvider = async (dispatch) => {
   const provider = new Web3Provider(window.ethereum);
@@ -27,7 +44,7 @@ export const loadProvider = async (dispatch) => {
 
 export const loadAccount = async (provider, dispatch) => {
   const accounts = await window.ethereum.request({
-    method: "eth_requestAccounts",
+    method: 'eth_requestAccounts',
   });
   const account = accounts[0];
   dispatch(setAccount(account));
@@ -61,7 +78,7 @@ export const loadTokens = async (providerOrSigner, addresses, dispatch) => {
 
     return [contract1, contract2];
   } catch (error) {
-    console.log("error in loadTokens", error);
+    console.log('error in loadTokens', error);
   }
 };
 
@@ -70,4 +87,100 @@ export const loadExchange = async (providerOrSigner, address, dispatch) => {
   dispatch(setExchangeLoaded(true));
   dispatch(setExchangeContract(contract));
   return contract;
+};
+
+// Load User Balances (wallets & exchange)
+// export const
+
+export const loadBalances = async (exchange, tokens, account, dispatch) => {
+  try {
+    const token1 = tokens.token1.contract;
+    const token2 = tokens.token2.contract;
+    const exchangeContract = exchange.contract;
+
+    const balance1 = ethers.formatUnits(await token1.balanceOf(account), 18);
+    const balance2 = ethers.formatUnits(await token2.balanceOf(account), 18);
+
+    dispatch(setToken1Balance(balance1));
+    dispatch(setToken2Balance(balance2));
+
+    const exchangeBalanceToken1 = ethers.formatUnits(
+      await exchangeContract.balanceOf(token1.target, account),
+      18
+    );
+
+    const exchangeBalanceToken2 = ethers.formatUnits(
+      await exchangeContract.balanceOf(token2.target, account),
+      18
+    );
+
+    dispatch(setExchangeToken1Balance(exchangeBalanceToken1));
+    dispatch(setExchangeToken2Balance(exchangeBalanceToken2));
+  } catch (error) {
+    console.log('error in loadBalances', error);
+  }
+};
+
+export const transferTokens = async (
+  signer,
+  exchange,
+  token,
+  amount,
+  dispatch
+) => {
+  try {
+    dispatch(setTransferRequest());
+
+    let transaction;
+
+    const amountToTransfer = ethers.parseUnits(amount.toString(), 18);
+
+    transaction = await token
+      .connect(signer)
+      .approve(exchange.target, amountToTransfer);
+
+    await signer.provider.waitForTransaction(transaction.hash);
+
+    console.log('Approval transaction mined');
+    transaction = await exchange
+      .connect(signer)
+      .depositToken(token.target, amountToTransfer);
+
+    const receipt = await signer.provider.waitForTransaction(transaction.hash);
+    console.log('Deposit transaction mined:', receipt);
+
+    await checkDepositEventEmitted(receipt, dispatch);
+  } catch (error) {
+    console.log('error in transferTokens', error);
+    dispatch(setTransferFail());
+  }
+};
+
+const checkDepositEventEmitted = async (receipt, dispatch) => {
+  try {
+    const iface = new ethers.Interface([
+      'event Deposit(address token, address user, uint256 amount, uint256 balance)',
+    ]);
+
+    const depositEvent = await receipt.logs
+      .map((log) => {
+        try {
+          return iface.parseLog(log);
+        } catch (error) {
+          return null;
+        }
+      })
+      .find((log) => log && log.name === 'Deposit');
+
+    if (depositEvent) {
+      dispatch(setTransferSuccess(depositEvent));
+    } else {
+      console.log(
+        'No Deposit event found in transaction receipt',
+        depositEvent
+      );
+    }
+  } catch (error) {
+    console.log('Error checking deposit event:', error);
+  }
 };

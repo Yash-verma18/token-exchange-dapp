@@ -19,7 +19,11 @@ const Balance = () => {
 
   const [token1TransferAmount, setToken1TransferAmount] = useState('');
 
+  console.log('token1TransferAmount', token1TransferAmount);
+
   const amountHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('event.target.value', event.target.value);
+    event.preventDefault();
     setToken1TransferAmount(event.target.value);
   };
 
@@ -32,7 +36,6 @@ const Balance = () => {
         token1TransferAmount,
         dispatch
       );
-
       setToken1TransferAmount('');
     }
   };
@@ -84,9 +87,10 @@ const Balance = () => {
       <h2 className='text-xs text-white'>Dapp Amount</h2>
       <Input
         type='text'
-        placeholder='00000'
+        placeholder='0.0000'
         onChange={amountHandler}
         className='w-full text-xs'
+        value={token1TransferAmount}
       />
       <Button
         variant='outline'

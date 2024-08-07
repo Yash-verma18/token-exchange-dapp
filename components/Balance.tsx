@@ -40,7 +40,8 @@ const Balance = () => {
           exchange.contract,
           tokens.token1.contract,
           token1TransferAmount,
-          dispatch
+          dispatch,
+          'Deposit'
         );
         setToken1TransferAmount('');
       }
@@ -51,7 +52,36 @@ const Balance = () => {
           exchange.contract,
           tokens.token2.contract,
           token2TransferAmount,
-          dispatch
+          dispatch,
+          'Deposit'
+        );
+        setToken2TransferAmount('');
+      }
+    }
+  };
+
+  const withdrawHandler = async (tokenType: string) => {
+    if (tokenType === 'token1') {
+      if (account && exchange && tokens) {
+        await transferTokens(
+          signer,
+          exchange.contract,
+          tokens.token1.contract,
+          token1TransferAmount,
+          dispatch,
+          'Withdraw'
+        );
+        setToken1TransferAmount('');
+      }
+    } else {
+      if (account && exchange && tokens) {
+        await transferTokens(
+          signer,
+          exchange.contract,
+          tokens.token2.contract,
+          token2TransferAmount,
+          dispatch,
+          'Withdraw'
         );
         setToken2TransferAmount('');
       }
@@ -127,9 +157,11 @@ const Balance = () => {
         <Button
           variant='outline'
           className='w-full'
-          onClick={() => {
-            depositHandler('token1');
-          }}
+          onClick={() =>
+            selectedTab === 'deposit'
+              ? depositHandler('token1')
+              : withdrawHandler('token1')
+          }
         >
           {selectedTab === 'deposit' ? 'Deposit' : 'Withdraw'} {'>'}
         </Button>
@@ -169,9 +201,11 @@ const Balance = () => {
         <Button
           variant='outline'
           className='w-full'
-          onClick={() => {
-            depositHandler('token2');
-          }}
+          onClick={() =>
+            selectedTab === 'deposit'
+              ? depositHandler('token2')
+              : withdrawHandler('token2')
+          }
         >
           {selectedTab === 'deposit' ? 'Deposit' : 'Withdraw'} {'>'}
         </Button>

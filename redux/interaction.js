@@ -126,7 +126,8 @@ export const transferTokens = async (
   exchange,
   token,
   amount,
-  dispatch
+  dispatch,
+  transferType
 ) => {
   try {
     dispatch(setTransferRequest());
@@ -135,21 +136,37 @@ export const transferTokens = async (
 
     const amountToTransfer = ethers.parseUnits(amount.toString(), 18);
 
-    transaction = await token
-      .connect(signer)
-      .approve(exchange.target, amountToTransfer);
+    if (transferType === 'Deposit') {
+      transaction = await token
+        .connect(signer)
+        .approve(exchange.target, amountToTransfer);
 
-    await signer.provider.waitForTransaction(transaction.hash);
+      await signer.provider.waitForTransaction(transaction.hash);
 
-    console.log('Approval transaction mined');
-    transaction = await exchange
-      .connect(signer)
-      .depositToken(token.target, amountToTransfer);
+      console.log('Approval transaction mined');
+      transaction = await exchange
+        .connect(signer)
+        .depositToken(token.target, amountToTransfer);
 
-    const receipt = await signer.provider.waitForTransaction(transaction.hash);
-    console.log('Deposit transaction mined:', receipt);
+      const receipt = await signer.provider.waitForTransaction(
+        transaction.hash
+      );
+      console.log('Deposit transaction mined:', receipt);
 
-    await checkDepositEventEmitted(receipt, dispatch);
+      await checkDepositEventEmitted(receipt, dispatch);
+    } else {
+      transaction = await exchange
+        .connect(signer)
+        .withdrawToken(token.target, amountToTransfer);
+
+      const receipt = await signer.provider.waitForTransaction(
+        transaction.hash
+      );
+
+      console.log('Withdraw transaction mined:', receipt);
+
+      await checkWithdrawEventEmitted(receipt, dispatch);
+    }
   } catch (error) {
     console.log('error in transferTokens', error);
     dispatch(setTransferFail());
@@ -182,5 +199,34 @@ const checkDepositEventEmitted = async (receipt, dispatch) => {
     }
   } catch (error) {
     console.log('Error checking deposit event:', error);
+  }
+};
+
+const checkWithdrawEventEmitted = async (receipt, dispatch) => {
+  try {
+    const iface = new ethers.Interface([
+      'event Withdraw(address token, address user, uint256 amount, uint256 balance)',
+    ]);
+
+    const withdrawEvent = await receipt.logs
+      .map((log) => {
+        try {
+          return iface.parseLog(log);
+        } catch (error) {
+          return null;
+        }
+      })
+      .find((log) => log && log.name === 'Withdraw');
+
+    if (withdrawEvent) {
+      dispatch(setTransferSuccess(withdrawEvent));
+    } else {
+      console.log(
+        'No Withdraw event found in transaction receipt',
+        withdrawEvent
+      );
+    }
+  } catch {
+    console.log('Error checking Withdraw event:', error);
   }
 };

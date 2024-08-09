@@ -39,7 +39,7 @@ Before running the project, ensure you have the following installed:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/token-exchange-dapp.git
+   git clone https://github.com/Yash-verma18/token-exchange-dapp.git
    cd token-exchange-dapp
    ```
 

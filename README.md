@@ -1,7 +1,9 @@
 Welcome to the Token Exchange DApp, an innovative decentralized application inspired by renowned decentralized exchanges like Uniswap and 1inch. This DApp is designed to facilitate seamless token trading on the Ethereum blockchain, allowing users to deposit, withdraw, and make token orders with ease. Powered by Solidity and a tech stack that includes Next.js, Tailwind, and Ether.js, this project exemplifies how modern decentralized finance (DeFi) platforms operate, providing a streamlined user experience with robust security features.
 
 
-# Token Exchange DApp
+# Token Exchange DApp 
+
+**Current Status : In progress.**
 
 ## Overview
 

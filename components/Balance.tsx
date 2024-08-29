@@ -105,12 +105,12 @@ const Balance = () => {
 
   return (
     <div className=''>
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center justify-between px-4'>
         <h2 className='text-sm text-white'>Balance</h2>
 
         <Tabs
           defaultValue={selectedTab}
-          className='w-[200px]'
+          className='w-[170px]'
           onValueChange={(value) => handleTabChange(value)}
         >
           <TabsList className='text-xs'>
@@ -166,7 +166,7 @@ const Balance = () => {
           {selectedTab === 'deposit' ? 'Deposit' : 'Withdraw'} {'>'}
         </Button>
       </div>
-
+      <hr className='mx-2 my-4 border-t border-b-blue-200' />
       {/* Token 2 : eth */}
       <div className='space-y-1 p-3 rounded-lg'>
         <div className='flex items-center justify-between'>
@@ -210,6 +210,7 @@ const Balance = () => {
           {selectedTab === 'deposit' ? 'Deposit' : 'Withdraw'} {'>'}
         </Button>
       </div>
+      <hr className='mx-2 my-4 border-t border-b-blue-200' />
     </div>
   );
 };

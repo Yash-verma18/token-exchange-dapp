@@ -17,14 +17,22 @@ import {
   token2Loaded,
 } from '@/redux/tokenSlice';
 import {
+  addNewOrder,
   setExchangeContract,
   setExchangeLoaded,
   setExchangeToken1Balance,
   setExchangeToken2Balance,
   setTransferFail,
   setTransferRequest,
-  setTransferSuccess,
+  setNewOrderFail,
+  newOrderRequest,
 } from '@/redux/exchangeSlice';
+
+import {
+  checkDepositEventEmitted,
+  checkWithdrawEventEmitted,
+  checkOrderEventEmitted,
+} from '@/redux/eventEmitted';
 
 // const formatTokens = (n) => {
 //   return ethers.parseUnits(n.toString());
@@ -173,60 +181,71 @@ export const transferTokens = async (
   }
 };
 
-const checkDepositEventEmitted = async (receipt, dispatch) => {
+//------------ ORDERS (BUY & SELL) ------------
+export const makeBuyOrder = async (
+  signer,
+  exchange,
+  tokens,
+  order,
+  dispatch
+) => {
   try {
-    const iface = new ethers.Interface([
-      'event Deposit(address token, address user, uint256 amount, uint256 balance)',
-    ]);
+    dispatch(newOrderRequest());
+    const tokenGet = tokens.token1.contract.target;
+    const tokenGive = tokens.token2.contract.target;
+    const amountGet = ethers.parseUnits(order.amount.toString(), 18);
+    const amountGive = ethers.parseUnits(
+      (order.amount * order.price).toString(),
+      18
+    );
 
-    const depositEvent = await receipt.logs
-      .map((log) => {
-        try {
-          return iface.parseLog(log);
-        } catch (error) {
-          return null;
-        }
-      })
-      .find((log) => log && log.name === 'Deposit');
+    let transaction = await exchange
+      .connect(signer)
+      .makeOrder(tokenGet, amountGet, tokenGive, amountGive);
 
-    if (depositEvent) {
-      dispatch(setTransferSuccess(depositEvent));
-    } else {
-      console.log(
-        'No Deposit event found in transaction receipt',
-        depositEvent
-      );
-    }
+    const receipt = await signer.provider.waitForTransaction(transaction.hash);
+
+    console.log('Buy order transaction mined');
+
+    const orderDetails = await checkOrderEventEmitted(receipt, dispatch);
+
+    dispatch(addNewOrder(orderDetails));
   } catch (error) {
-    console.log('Error checking deposit event:', error);
+    console.log('error in makeBuyOrder', error);
+    dispatch(setNewOrderFail());
   }
 };
-
-const checkWithdrawEventEmitted = async (receipt, dispatch) => {
+export const makeSellOrder = async (
+  signer,
+  exchange,
+  tokens,
+  order,
+  dispatch
+) => {
   try {
-    const iface = new ethers.Interface([
-      'event Withdraw(address token, address user, uint256 amount, uint256 balance)',
-    ]);
+    dispatch(newOrderRequest());
+    const tokenGet = tokens.token2.contract.target;
+    const tokenGive = tokens.token1.contract.target;
 
-    const withdrawEvent = await receipt.logs
-      .map((log) => {
-        try {
-          return iface.parseLog(log);
-        } catch (error) {
-          return null;
-        }
-      })
-      .find((log) => log && log.name === 'Withdraw');
+    const amountGet = ethers.parseUnits(
+      (order.amount * order.price).toString(),
+      18
+    );
+    const amountGive = ethers.parseUnits(order.amount.toString(), 18);
 
-    if (withdrawEvent) {
-      dispatch(setTransferSuccess(withdrawEvent));
-    } else {
-      console.log(
-        'No Withdraw event found in transaction receipt',
-        withdrawEvent
-      );
-    }
-  } catch {
-    console.log('Error checking Withdraw event:', error);
+    let transaction = await exchange
+      .connect(signer)
+      .makeOrder(tokenGet, amountGet, tokenGive, amountGive);
+
+    const receipt = await signer.provider.waitForTransaction(transaction.hash);
+
+    console.log('Sell order transaction mined');
+
+    const orderDetails = await checkOrderEventEmitted(receipt, dispatch);
+
+    dispatch(addNewOrder(orderDetails));
+  } catch (error) {
+    console.log('error in makeBuyOrder', error);
+    dispatch(setNewOrderFail());
   }
 };

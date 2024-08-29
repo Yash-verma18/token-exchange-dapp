@@ -8,6 +8,8 @@ export const exchangeSlice = createSlice({
     token1Balance: 0,
     token2Balance: 0,
     transferInProgress: false,
+    allOrders: [],
+    allEvents: [],
   },
   reducers: {
     setExchangeLoaded: (state, action) => {
@@ -40,7 +42,7 @@ export const exchangeSlice = createSlice({
         isSuccessful: true,
       };
       state.transferInProgress = false;
-      state.event = action.payload;
+      state.allEvents = [...state.allEvents, action.payload];
     },
 
     setTransferFail: (state) => {
@@ -51,6 +53,37 @@ export const exchangeSlice = createSlice({
         isError: true,
       };
       state.transferInProgress = false;
+    },
+
+    // Making order Cases
+    newOrderRequest: (state) => {
+      state.newOrderRequest = {
+        transactionType: 'New Order',
+        isPending: true,
+        isSuccessful: false,
+      };
+    },
+
+    setNewOrderFail: (state) => {
+      state.newOrderRequest = {
+        transactionType: 'New Order',
+        isPending: false,
+        isSuccessful: false,
+        isError: true,
+      };
+    },
+
+    setNewOrderSuccess: (state, action) => {
+      state.newOrderRequest = {
+        transactionType: 'New Order',
+        isPending: false,
+        isSuccessful: true,
+      };
+      state.allEvents = [...state.allEvents, action.payload];
+    },
+
+    addNewOrder: (state, action) => {
+      state.allOrders = [...state.allOrders, action.payload];
     },
   },
 });
@@ -63,6 +96,10 @@ export const {
   setTransferRequest,
   setTransferSuccess,
   setTransferFail,
+  newOrderRequest,
+  setNewOrderFail,
+  setNewOrderSuccess,
+  addNewOrder,
 } = exchangeSlice.actions;
 
 export default exchangeSlice.reducer;
